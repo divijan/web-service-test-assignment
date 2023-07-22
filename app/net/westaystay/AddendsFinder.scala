@@ -1,8 +1,11 @@
 package net.westaystay
 
+import javax.inject._
+
 case class Addends(indices: (Int, Int), numbers: (Int, Int))
 
-object AddendsFinder {
+@Singleton
+class AddendsFinder {
   def findAddends(data: Array[Int], target: Int): Option[Addends] = {
     //return index of a second addend in the tail
     def findSecondIndex(tail: Vector[Int], first: Int, indexOffset: Int): Option[Int] = if (tail.isEmpty) {
