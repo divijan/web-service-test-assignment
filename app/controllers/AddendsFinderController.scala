@@ -6,9 +6,9 @@ import javax.inject._
 import play.api._
 import play.api.mvc._
 import views.{FindInput, FindOutput}
-import net.westaystay.{ValidationError, ConfigurationError}
+import net.westaystay.{ConfigurationError, ValidationError}
 import net.westaystay.Error
-import Error._
+import views.ErrorWrites._
 import play.api.libs.json.Json
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -16,8 +16,12 @@ import scala.concurrent.{ExecutionContext, Future}
 @Singleton
 class AddendsFinderController @Inject()(addendsFinder: AddendsFinder,
                                         targetHandler: TargetHandler,
+                                        config: Configuration,
                                         val controllerComponents: ControllerComponents)
                                        (implicit ec: ExecutionContext) extends BaseController {
+  private val rateLimitPerMinute: Int = config.get[Int]("maxRequestsPerMinute")
+  private val rateLimitPerSecond: Float = rateLimitPerMinute / 60f
+
   def find() = Action.async(parse.json) { implicit request =>
     request.body.asOpt[FindInput].fold(
       Future.successful(BadRequest(Json.toJson(
@@ -33,6 +37,7 @@ class AddendsFinderController @Inject()(addendsFinder: AddendsFinder,
             data <- validatedData
           } yield addendsFinder.findAddends(data, target)
         }
+
         wrappedAddends.map(either => either.fold({
           case e: ValidationError => BadRequest(Json.toJson(e))
           case e: ConfigurationError => InternalServerError(Json.toJson(e))

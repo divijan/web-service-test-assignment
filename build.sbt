@@ -10,6 +10,7 @@ scalaVersion := "2.13.11"
 libraryDependencies ++= Seq(
   guice,
   ws,
+  "org.julienrf" %% "play-json-derived-codecs" % "7.0.0",
   "org.scalatestplus.play" %% "scalatestplus-play" % "5.1.0" % Test
 )
 
