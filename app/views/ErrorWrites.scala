@@ -6,7 +6,7 @@ import net.westaystay.{ConfigurationError, ValidationError}
 object ErrorWrites {
   implicit val validationErrorWrites: Writes[ValidationError] = new Writes[ValidationError] {
     def writes(a: ValidationError) = Json.obj(
-      "type" -> "ValidationError",
+      "type" -> "InputValidationError",
       "message" -> a.message
     )
   }

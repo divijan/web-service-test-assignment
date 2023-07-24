@@ -18,6 +18,13 @@ In a successful case the endpoint returns either a
   - `numbers` - an array of two integers, actual elements of the array pointed at by `indices`
 - 204 No Content with an empty body if no two numbers in `data` added amount to `target`
 
-If input does not constitute a well-formed JSON with the expected fields or the fields do not meet the constraints described above, 
-the response will be 400 Bad Request with a JSON body containing an object with a single `message` string field describing the problem with input.
-If neither input nor configuration contains a target, the response will be 500 Internal Server Error with JSON body containing an object with a single `message` string.
+In case of error the response body is a JSON object with the following fields:
+- `type` string field describing the type of an error; 
+- `message` string field containing the specific error message. 
+
+Error cases and corresponding response codes:
+- If input does not constitute a well-formed JSON with the expected fields or the fields do not meet the constraints described above, 
+the response status will be `400 Bad Request`;
+- If neither input nor configuration contains a `target`, the response code will be `500 Internal Server Error`;
+- If number of requests with correctly formed (valid or invalid) JSON payload per minute has exceeded maximum configured, 
+the response code will be `429 Too Many Requests`.

@@ -1,13 +1,11 @@
 package controllers
 
-import net.westaystay.{Addends, AddendsFinder, TargetHandler}
+import net.westaystay.{Addends, AddendsFinder, ConfigurationError, Error, SlidingWindowRateLimiter, TargetHandler, ValidationError}
 
 import javax.inject._
 import play.api._
 import play.api.mvc._
 import views.{FindInput, FindOutput}
-import net.westaystay.{ConfigurationError, ValidationError}
-import net.westaystay.Error
 import views.ErrorWrites._
 import play.api.libs.json.Json
 
@@ -16,18 +14,19 @@ import scala.concurrent.{ExecutionContext, Future}
 @Singleton
 class AddendsFinderController @Inject()(addendsFinder: AddendsFinder,
                                         targetHandler: TargetHandler,
-                                        config: Configuration,
+                                        rateLimiter: SlidingWindowRateLimiter,
                                         val controllerComponents: ControllerComponents)
                                        (implicit ec: ExecutionContext) extends BaseController {
-  private val rateLimitPerMinute: Int = config.get[Int]("maxRequestsPerMinute")
-  private val rateLimitPerSecond: Float = rateLimitPerMinute / 60f
-
   def find() = Action.async(parse.json) { implicit request =>
     request.body.asOpt[FindInput].fold(
-      Future.successful(BadRequest(Json.toJson(
-        ValidationError("could not parse data array of ints and optional target int from request body"))
-      )))
-      { findInput =>
+      Future.successful(
+        BadRequest(
+          Json.toJson(
+            ValidationError("could not parse data array of ints and optional target int from request body"))
+        )
+      )
+    ) { findInput =>
+      if (rateLimiter.isRequestAllowed) {
         val wrappedAddends: Future[Either[Error, Option[Addends]]] = for {
           validatedData <- Future.successful(findInput.validateData)
           validatedTarget <- targetHandler.handleOptionalTarget(findInput.target)
@@ -44,6 +43,16 @@ class AddendsFinderController @Inject()(addendsFinder: AddendsFinder,
         }, option => option.fold(NoContent) { case Addends(indices, numbers) =>
           Ok(Json.toJson(FindOutput(Array(indices._1, indices._2), Array(numbers._1, numbers._2))))
         }))
+      } else {
+        Future.successful(
+          TooManyRequests(
+            Json.obj(
+              "type" -> "RequestRateError",
+              "message" -> s"Number of requests per minute exceeded maximum of ${rateLimiter.maxRequestsPerMinute}"
+            )
+          )
+        )
       }
+    }
   }
 }
