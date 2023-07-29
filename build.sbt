@@ -10,8 +10,10 @@ scalaVersion := "2.13.11"
 libraryDependencies ++= Seq(
   guice,
   ws,
+  "org.typelevel" %% "cats-effect" % "3.5.1",
   "org.julienrf" %% "play-json-derived-codecs" % "7.0.0",
-  "org.scalatestplus.play" %% "scalatestplus-play" % "5.1.0" % Test
+  "org.scalatestplus.play" %% "scalatestplus-play" % "5.1.0" % Test,
+  "de.leanovate.play-mockws" %% "play-mockws" % "2.8.1" % Test
 )
 
 Global / onChangedBuildSource := ReloadOnSourceChanges

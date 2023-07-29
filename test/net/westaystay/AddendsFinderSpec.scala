@@ -31,5 +31,7 @@ class AddendsFinderSpec extends AnyFunSpec with should.Matchers {
         result should contain (Addends((0, 1), (3, 3)))
       }
     }
+
+    //todo: add corner cases and bad input cases
   }
 }
